@@ -72,15 +72,13 @@ def plotDraw_Months():
     x2 = [item + width for item in range(len(frequency[1]))]
     frequency = [features[item].value_counts().sort_index().to_numpy().astype(int) for item in features]
     avg = result["bid_price_unit_of_mkr"].div(frequency[1]).mul(20)
-    ax = plt.subplot(2, 1, 2)
+    fig, ax = plt.subplots()
     # fig(figsize=(10, 10))
     ax.bar(x, frequency[0], width, color = 'tomato')
     ax.bar(x1, frequency[1], width, color = "slateblue")
     ax.bar(x2, frequency[2], width, color = "forestgreen")
-    plt.legend(["Deal", "Kick", "Tend"])
-    ax1 = plt.subplot(2, 1, 1)
     ax.plot(x1Index, avg, color = "darkorange", marker = "o", linestyle = "dashed")
-    plt.legend(["Avg Monthly Price"])
+    plt.legend(["Avg Monthly Price", "Deal", "Kick", "Tend"])
     
     plt.show()
 
