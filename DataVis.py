@@ -92,7 +92,7 @@ def DataProcess_Liq1():
     features = features.dropna(axis=0, how="all")
     return features
 
-def BarLiq1_2():
+def Draw_liq1():
     features = DataProcess_Liq1()
     frequency = [features[item].value_counts().sort_index() for item in features]
     x1Index = frequency[1].index.values.tolist()
