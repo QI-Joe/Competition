@@ -33,6 +33,36 @@ def plotdrawing_Days():
     
 def plotDraw_Months():
     Pbid, features = dataProcess()
+    features = [pd.to_datetime(item, format="%Y-%m-%d").dt.strftime("%y-%m") for item in features]
+    features = pd.DataFrame(features).T
+    frequency = [features[item].value_counts().sort_index() for item in features]
+    x = frequency[0].index.values.tolist()
+    x1 = frequency[1].index.values.tolist()
+    x2 = frequency[2].index.values.tolist()
+    frequency = [features[item].value_counts().sort_index().to_numpy().astype(int) for item in features]
+    plt.figure(figsize=(20, 10))
+    #------------------------
+    plt.subplot(2, 2, 1)
+    plt.plot(x, frequency[0], color = 'lightcoral', marker = "o", label = "Kick")
+    #------------------------
+    x_major_locator=MultipleLocator(1)
+    ax=plt.gca()
+    ax.xaxis.set_major_locator(x_major_locator)
+    #------------------------
+    plt.subplot(2, 2, 2)
+    plt.plot(x1, frequency[1], color = "royalblue", linestyle = "--", label = "Tend")
+    #------------------------
+    x_major_locator=MultipleLocator(1)
+    ax=plt.gca()
+    ax.xaxis.set_major_locator(x_major_locator)
+    #------------------------
+    plt.subplot(2, 2, 3)
+    plt.plot(x2, frequency[2], color = "forestgreen", label = "Deal")
+    #------------------------
+    x_major_locator=MultipleLocator(1)
+    ax=plt.gca()
+    ax.xaxis.set_major_locator(x_major_locator)
+    #------------------------------------------------
+    plt.show()
     
-    
-plotdrawing_Days()
+plotDraw_Months()
