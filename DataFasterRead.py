@@ -14,31 +14,67 @@ def dataProcess():
                         pd.to_datetime(target.tend_time, format = '%m/%d/%Y %H:%M:%S', errors='coerce').dt.strftime("%Y-%m-%d")]
     return target.bid_price_unit_of_mkr, features
 
-def DateCalculate():
-    target = read(tarpath)
-    features : list = [pd.to_datetime(target.deal_time, format = '%m/%d/%Y %H:%M:%S', errors='coerce'),  
-                    pd.to_datetime(target.kick_time, format = '%m/%d/%Y %H:%M:%S', errors='coerce')]
-    features = pd.DataFrame(features).T
-    newfea : pd.DataFrame= (pd.to_datetime(features["deal_time"], format="%m/%d/%Y %H:%M:%S") - pd.to_datetime(features["kick_time"], format="%m/%d/%Y %H:%M:%S"))
-    newfea = pd.DataFrame({"time" : newfea})
-    newfea = pd.concat([newfea, features["kick_time"]], axis=1)
-    newfea["kick_time"] = pd.to_datetime(newfea["kick_time"], format="%m/%d/%Y %H:%M:%S").dt.strftime("%Y-%m-%d")
-    newfea.set_index(newfea["kick_time"], drop=True, inplace=True)
-    frequency = newfea.groupby(level=0).sum()
-    frequency = pd.DataFrame(frequency["time"].div(np.timedelta64(1, "h")).values)
-    res : pd.DataFrame = frequency.apply(pd.Series.value_counts, bins = [0, 5, 10, 15, 20, 25, 30, 50, 70, 100, 150, 200]).sort_index()
-    Xindex = ["0-5", "5-10", "10-15", "15-20", "20-25", "25-30", "30-50", "50-70", "70-100", "100-150", "150-200"]
-    correX = np.array(range(0, 11))
-    plt.xticks(correX ,Xindex)
-    plt.plot(correX, res)
-    plt.show()
-# new feature
-DateCalculate()
+def dataProcess():
+    target = read()
 
-"""
-The DTypes <class 'numpy.dtype[timedelta64]'> and <class 'numpy.dtype[float64]'> do not have a common DType. 
-For example they cannot be stored in a single array unless the dtype is `object`.
-"""
+    id = target.surplus_auction_id
+    dealTime = pd.to_datetime(target.deal_time, format="%Y/%m/%d %H:%M:%S")
+    kickTime = pd.to_datetime(target.kick_time, format="%Y/%m/%d %H:%M:%S")
+    # dentTime = pd.to_datetime(target.dent_time, format="%Y/%m/%d %H:%M:%S")
+    dentLot = target.dent_lot
+
+    lastid = id[0]
+    lastindex = 0
+    result = []
+    for index in range(len(id)):
+        if id[index] != lastid or index == len(id) - 1:
+            # kick_time = kickTime[lastindex].strftime("%Y-%m-%d")
+
+            deal_kick = dealTime[index - 1] - kickTime[lastindex]
+            deal_kick /= np.timedelta64(1, "h")
+
+            # deal_dent = dealTime[index - 1] - dentTime[lastindex]
+            # deal_dent /= np.timedelta64(1, "h")
+
+            lot_start = dentLot[lastindex]
+            lot_ent = dentLot[index - 1]
+            lot_differ = lot_start - lot_ent
+
+            result.append((lastid, deal_kick, lot_differ, lot_ent))
+
+            lastid = id[index]
+            lastindex = index
+
+    resultDataFrame = pd.DataFrame(
+        result,
+        columns=["id", "deal_kick", "lot_differ", "lot_end"],
+    )
+    resultDataFrame.set_index("id", drop=True, inplace=True)
+
+    return resultDataFrame
+
+
+def plotDraw():
+    result = dataProcess()
+    fig, ax = plt.subplots()
+    ax.plot(result.index, result.deal_kick)
+    ax.set_title("deal - kick")
+
+def plotDraw2():
+    result = dataProcess()
+    fig, ax = plt.subplots()
+    ax.clear()
+    ax.plot(result.index, result.lot_differ)
+    ax.set_title("lot_differ")
+    plt.show()
+
+def plotDraw3():
+    result = dataProcess()
+    fig, ax = plt.subplots()
+    ax.clear()
+    ax.plot(result.index, result.lot_end)
+    ax.set_title("lot_end")
+    plt.show()
 
 
 def plotdrawing_Days():
