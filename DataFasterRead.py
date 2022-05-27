@@ -25,8 +25,12 @@ def DateCalculate():
     newfea["kick_time"] = pd.to_datetime(newfea["kick_time"], format="%m/%d/%Y %H:%M:%S").dt.strftime("%Y-%m-%d")
     newfea.set_index(newfea["kick_time"], drop=True, inplace=True)
     frequency = newfea.groupby(level=0).sum()
-    Xindex = frequency.index.values.tolist()
-    plt.scatter(Xindex, frequency["time"].astype(float, casting = "unsafe"))
+    frequency = pd.DataFrame(frequency["time"].div(np.timedelta64(1, "h")).values)
+    res : pd.DataFrame = frequency.apply(pd.Series.value_counts, bins = [0, 5, 10, 15, 20, 25, 30, 50, 70, 100, 150, 200]).sort_index()
+    Xindex = ["0-5", "5-10", "10-15", "15-20", "20-25", "25-30", "30-50", "50-70", "70-100", "100-150", "150-200"]
+    correX = np.array(range(0, 11))
+    plt.xticks(correX ,Xindex)
+    plt.plot(correX, res)
     plt.show()
 # new feature
 DateCalculate()
