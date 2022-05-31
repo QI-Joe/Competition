@@ -3,10 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.dates import date2num
 
-depositePath : str = r"C:\Users\Qi Shihao\Desktop\Web3Work\competition_related\maker.collateral.deposit.20220403.csv"
-borrowPath : str = r"C:\Users\Qi Shihao\Desktop\Web3Work\competition_related\maker.collateral.borrow.20220403.csv"
-repayPath : str = r"C:\Users\Qi Shihao\Desktop\Web3Work\competition_related\maker.collateral.repay.20220403.csv"
-withdrawPath : str  = r"C:\Users\Qi Shihao\Desktop\Web3Work\competition_related\maker.collateral.withdraw.20220403.csv"
+depositePath : str = r"maker.collateral.deposit.20220403.csv"
+borrowPath : str = r"maker.collateral.borrow.20220403.csv"
+repayPath : str = r"maker.collateral.repay.20220403.csv"
+withdrawPath : str  = r"maker.collateral.withdraw.20220403.csv"
 
 def read(inputPath : str):
     tarfile = pd.read_csv(inputPath)
@@ -34,7 +34,7 @@ def deposite_withdrawProcessShow(depositPath : str = depositePath , withdrawpath
     width = np.diff(dates).min()
     ax.bar(dates, +timeFre.depBlkF, facecolor = "slateblue", edgecolor = "white", label = "deposit block time", width=width)
     ax.bar(dates, -timeFre.witBlkF, facecolor = "orange", edgecolor = "white", label = "withdrawl block time", width=width)
-    ax.plot(dates, timeFre.TimeDiff, label = "Mined Time Difference", color = "aquamarine", linestyle = "dashed")
+    ax.plot(dates, timeFre.TimeDiff, label = "Mined Time Difference", color = "red", linestyle = "dashed")
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_visible(False)
@@ -49,14 +49,33 @@ def deposite_withdrawProcessShow(depositPath : str = depositePath , withdrawpath
     plt.tick_params(axis="x", which = "major", labelsize = 5)
     fig.autofmt_xdate(rotation = 90)
     ax.xaxis_date()
-    plt.legend(["Mined Time Difference", "deposit block time", "withdrawl block time"])
+    plt.legend(["Mined Time Difference", "deposit amount per week", "withdrawl amount per week"])
     plt.title("Chart for deposit and withdraw")
     #-----------draw plots bid price----------------------------------------------
-    big, bx = plt.subplots()
-    bx.fill_between(dates, y1 = +bidFre.depCou.mul(1e6), y2=0, facecolor = "red", alpha = 0.7)
-    bx.fill_between(dates, y1= 0, y2=-bidFre.witCou, facecolor = "powderblue", alpha = 0.7)
+    big, (bx, bx1) = plt.subplots(2)
+    bx.plot(dates, bidFre.depCou, color = "tomato", linestyle = "dashed")
+    bx1.plot(dates, bidFre.witCou, color = "gold", marker = "o", linestyle = "dotted")
     big.autofmt_xdate(rotation = 45)
     bx.xaxis_date()
+    bx1.xaxis_date()
+    bx.spines['top'].set_visible(False)
+    bx.spines['right'].set_visible(False)
+    bx.spines['left'].set_visible(False)
+    bx.spines['bottom'].set_color('#DDDDDD')
+    bx1.spines['top'].set_visible(False)
+    bx1.spines['right'].set_visible(False)
+    bx1.spines['left'].set_visible(False)
+    bx1.spines['bottom'].set_color('#DDDDDD')
+    #------hide x ticks----
+    bx.tick_params(bottom=False, left=False)
+    bx1.tick_params(bottom=False, left=False)
+    # draw horzonal lines from every y value
+    bx.set_axisbelow(True)
+    bx.yaxis.grid(True, color='moccasin')
+    bx.xaxis.grid(False)
+    bx1.set_axisbelow(True)
+    bx1.yaxis.grid(True, color='moccasin')
+    bx1.xaxis.grid(False)
     plt.show()
 
 def repay_borrowProcessShow(borrowpath : str = borrowPath, repaypath : str = repayPath):
@@ -96,7 +115,7 @@ def repay_borrowProcessShow(borrowpath : str = borrowPath, repaypath : str = rep
     plt.tick_params(axis="x", which = "major", labelsize = 5)
     fig.autofmt_xdate(rotation = 90)
     ax.xaxis_date()
-    plt.legend([ "Mined Time Difference", "deposit block time", "withdraw block time"])
+    plt.legend([ "Mined Time Difference", "repay amount per week", "withdraw amount per week"])
     plt.title("Chart for borrow and repay")
     #-----------------for bid price --------------------------------------------------
     big, bx = plt.subplots()
@@ -109,7 +128,7 @@ def repay_borrowProcessShow(borrowpath : str = borrowPath, repaypath : str = rep
     bx.spines['left'].set_visible(False)
     bx.spines['bottom'].set_color('#DDDDDD')
     #------hide x ticks----
-    ax.tick_params(bottom=False, left=False)
+    bx.tick_params(bottom=False, left=False)
     # draw horzonal lines from every y value
     bx.set_axisbelow(True)
     bx.yaxis.grid(True, color='moccasin')
@@ -120,4 +139,5 @@ def repay_borrowProcessShow(borrowpath : str = borrowPath, repaypath : str = rep
     plt.title("Good, this is collteral different trends of borrow and repay/Dai")
     plt.show()
     
+deposite_withdrawProcessShow()
 repay_borrowProcessShow()
