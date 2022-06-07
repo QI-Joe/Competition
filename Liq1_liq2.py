@@ -10,23 +10,128 @@ def read(inputPath : str):
     tarfile = pd.read_csv(inputPath)
     return tarfile
 
-def DataProcess_Liq1():
+def New_DataProcess_Liq1():
     target = read(liq1Path)
-    features : pd.DataFrame = pd.DataFrame([pd.to_datetime(target.deal_time, format = '%Y/%m/%d %H:%M:%S', errors='coerce').dt.strftime("%y-%m"),  
-            pd.to_datetime(target.kick_time, format = '%Y/%m/%d %H:%M:%S', errors='coerce').dt.strftime("%y-%m"), 
-            pd.to_datetime(target.tend_time, format = '%Y/%m/%d %H:%M:%S', errors='coerce').dt.strftime("%y-%m")]).T
+    target = target[target["collateral_type"] == "ETH-A"]
+    features : pd.DataFrame = pd.DataFrame({"deal" : pd.to_datetime(target.deal_time, format = '%Y/%m/%d %H:%M:%S', errors='coerce'),  
+            "kick" : pd.to_datetime(target.kick_time, format = '%Y/%m/%d %H:%M:%S', errors='coerce'), 
+            "tend" : pd.to_datetime(target.tend_time, format = '%Y/%m/%d %H:%M:%S', errors='coerce'), 
+             "fre" : [1 for _ in range(target.kick_time.shape[0])]})
     bidPrice = pd.DataFrame(
-            { "kick" : pd.to_datetime(target.kick_time, format = '%Y/%m/%d %H:%M:%S', errors='coerce').dt.strftime("%y-%m"),
-             "collateral_unit" : target.collateral_unit,
+            { "kick" : pd.to_datetime(target.kick_time, format = '%Y/%m/%d %H:%M:%S', errors='coerce'),
             "collateral_type" : target.collateral_type, 
+            "collateral_unit" : target.collateral_unit,
             "dent_lot" : target.dent_lot,
-            "tend_bid_dai" : target.tend_bid_dai})
-    features = features.dropna(axis=0, how="all")
+            "tend_bid_dai" : target.tend_bid_dai,
+            "tblknum" : target.tend_block_number,
+            "cblknum" : target.call_block_number})
+    features = features.dropna(axis=0, how="any")
     bidPrice = bidPrice.dropna(axis=0, how="any")
-    bidPrice = bidPrice[bidPrice["collateral_type"] == "ETH-A"]
     return bidPrice, features
 
-def DrawLiq1():
+def New_DrawLiq1():
+    bidprice, fea = New_DataProcess_Liq1()
+    Kfea = fea.resample("W-Mon", on = "kick").sum().reset_index().sort_values(by="kick")
+    Dfea = fea.resample("W-Mon", on = "deal").sum().reset_index().sort_values(by="deal")
+    Tfea = fea.resample("W-Mon", on = "tend").sum().reset_index().sort_values(by="tend")
+    blkdiff = np.diff(bidprice.tblknum)
+    bidprice.tblknum = np.insert(blkdiff, 0, 0)
+    blkdiff = np.diff(bidprice.cblknum)
+    bidprice.cblknum = np.insert(blkdiff, 0, 0)
+    bidp = bidprice.resample("W-Mon", on = "kick").sum().reset_index().sort_values(by="kick")
+    
+    dates = date2num(Kfea.kick)
+    width = np.diff(dates).min()
+    fig, (ax, ax1) = plt.subplots(2)
+    ax.bar(dates-width/3, Kfea.fre, facecolor = "slateblue", edgecolor = "white", width=width/3)
+    ax.bar(dates, Dfea.fre, facecolor = "orange", edgecolor = "white", width = width/3)
+    ax.bar(dates + width/3, Tfea.fre, facecolor = "gold", edgecolor = "white", width = width/3)
+    ax.legend(["event Kick amount per week", "event Deal amount per week", "event Tend amount per week"])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_color('#DDDDDD')
+    #------hide x ticks----
+    ax.tick_params(bottom=False, left=False)
+    # draw horzonal lines from every y value
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(True, color='moccasin')
+    ax.xaxis.grid(False)
+    # -----------x axis has too many values.....
+    plt.tick_params(axis="x", which = "major", labelsize = 5)
+    ax1.plot(dates, bidp.iloc[:, 1:4])
+    ax1.plot(dates, bidp.tblknum, linestyle = "dashed")
+    ax1.fill_between(dates, bidp.cblknum, bidp.tend_bid_dai, facecolor = "lavender", edgecolor = "white", alpha = 0.5)
+    plt.legend(["Total collateral_unit per week", "Total dent_lot per week", "Total tend_bid_dai per week", "tend_block_number mined difference", "call_block_number mined difference"])
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.spines['left'].set_visible(False)
+    ax1.spines['bottom'].set_color('#DDDDDD')
+    #------hide x ticks----
+    ax1.tick_params(bottom=False, left=False)
+    # draw horzonal lines from every y value
+    ax1.set_axisbelow(True)
+    ax1.yaxis.grid(True, color='moccasin')
+    ax1.xaxis.grid(False)
+    # -----------x axis has too many values.....
+    plt.tick_params(axis="x", which = "major", labelsize = 5)
+    ax.xaxis_date()
+    ax1.xaxis_date()
+    plt.show()
+
+def Advacned_Liq2(Liq1path : str = liq1Path, Liq2path : str = liq2Path):
+    q1tar, q2tar = read(Liq1path), read(Liq2path)
+    q1tar, q2tar = q1tar.dropna(axis=0, how="any"), q2tar.dropna(axis=0, how="any")
+    q1tar, q2tar = q1tar[q1tar.collateral_type == "ETH-A"], q2tar[q2tar.symbol == "ETH-A"]
+    q1index, q2index = pd.to_datetime(q1tar.kick_time, format="%Y/%m/%d %H:%M:%S", errors='coerce').dt.strftime("%y-%m-%d"), pd.to_datetime(q2tar.take_block_time, format="%Y/%m/%d %H:%M:%S", errors='coerce').dt.strftime("%y-%m-%d")
+    q1tar, q2tar = q1tar.select_dtypes(include = [np.float64]), q2tar.select_dtypes(include = [np.float64, np.int64])
+    q1tar.set_index(q1index, inplace = True)
+    # ------------------set different index to q2 dataset--------------------------
+    q2tar = pd.concat([q2tar, pd.to_datetime(q2index, format="%y-%m-%d")], axis=1)
+    q2auction_block_number = np.diff(q2tar.auction_block_number)
+    q2tar.auction_block_number = np.insert(q2auction_block_number, 0, 0)
+    q2tar : pd.DataFrame = q2tar.resample("W-Mon", on="take_block_time").sum().reset_index().sort_values(by = "take_block_time")
+    #--------------------starting drawing------------------------------------------------
+    fig, (ax, ax1) = plt.subplots(2)
+    dates = date2num(q2tar.take_block_time)
+    width = np.diff(dates).min()
+    ax.fill_between(dates, y1 = q2tar.dai_paid, y2=0, facecolor = "thistle", edgecolor = "white", alpha = 0.7)
+    ax1.fill_between(dates, y1 = q2tar.auction_block_number.mul(-1)  , facecolor = "turquoise", edgecolor = "white", alpha = 0.7)
+    #----------------------------
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_color('#DDDDDD')
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.spines['left'].set_visible(False)
+    ax1.spines['bottom'].set_color('#DDDDDD')
+    #------hide x ticks----
+    ax.tick_params(bottom=False, left=False)
+    ax1.tick_params(bottom=False, left=False)
+    # draw horzonal lines from every y value
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(True, color='moccasin')
+    ax.xaxis.grid(False)
+    ax.xaxis_date()
+    ax1.set_axisbelow(True)
+    ax1.yaxis.grid(True, color='moccasin')
+    ax1.xaxis.grid(False)
+    ax1.xaxis_date()
+    ax.legend(["Dai Paid(total)"]) 
+    ax1.legend(["mined block difference"])
+    plt.title("Liqudation 2 analysis data")
+    plt.show()
+
+
+
+# Hey, remember to implement this is needed
+def  DataProcess_Liq1():
+    bidp : pd.DataFrame
+    fea : pd.DataFrame
+    return bidp, fea
+
+def old_DrawLiq1():
     bidpeice, features = DataProcess_Liq1()
     frequency = [features[item].value_counts().sort_index() for item in features]
     x1Index = frequency[1].index.values.tolist()
@@ -93,5 +198,6 @@ def DrawLiq2():
     plt.show()
 
 if __name__ == "__main__":
-    DrawLiq1()
-    DrawLiq2()
+    New_DrawLiq1()
+    Advacned_Liq2()
+    # DrawLiq2()
