@@ -1,9 +1,10 @@
+from matplotlib import dates
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.dates import date2num
 import numpy as np
 
-tarpath = r"maker.liquidation.surplus.20220403.csv"
+tarpath = r"C:\Users\Qi Shihao\Desktop\Web3Work\competition_related\maker.liquidation.surplus.20220403.csv"
 
 def read(inputPath : str):
     tarfile = pd.read_csv(inputPath)
@@ -73,4 +74,5 @@ def plotDraw_Months():
     ax1.xaxis_date()
     plt.title("total bid_price_unit_of_mkr")
     plt.show()
-   
+
+plotDraw_Months()
