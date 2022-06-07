@@ -136,9 +136,6 @@ def old_DrawLiq1():
     frequency = [features[item].value_counts().sort_index() for item in features]
     x1Index = frequency[1].index.values.tolist()
     width = 0.4
-    # x = date2num(pd.to_datetime(frequency[0].index.values.tolist(), format = "%y-%m"))
-    # x1 = date2num(pd.to_datetime(frequency[1].index.values.tolist(), format = "%y-%m"))
-    # x2 = date2num(pd.to_datetime(frequency[2].index.values.tolist(), format = "%y-%m"))
     
     x = [item - width for item in range(len(frequency[1]))]
     x1 = [item for item in range(len(frequency[1]))]
@@ -200,4 +197,4 @@ def DrawLiq2():
 if __name__ == "__main__":
     New_DrawLiq1()
     Advacned_Liq2()
-    # DrawLiq2()
+    DrawLiq2()
